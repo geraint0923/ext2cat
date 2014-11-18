@@ -35,16 +35,21 @@ __u32 get_block_size(void * fs) {
 // get_block(fs, 0) == fs;
 void * get_block(void * fs, __u32 block_num) {
     // FIXME: Uses reference implementation.
-    return _ref_get_block(fs, block_num);
+    //return _ref_get_block(fs, block_num);
+    return (void*)((char*)fs + block_num * get_block_size(fs));
 }
 
+#define ROUND_UP(x, size) \
+	((void*)((unsigned long)((char*)(x)+size-1) & ~((size)-1)))
 
 // Return a pointer to the first block group descriptor in a filesystem. Real
 // ext2 filesystems will have several of these, but, for simplicity, we will
 // assume there is only one.
 struct ext2_group_desc * get_block_group(void * fs, __u32 block_group_num) {
     // FIXME: Uses reference implementation.
-    return _ref_get_block_group(fs, block_group_num);
+    //return _ref_get_block_group(fs, block_group_num);
+	unsigned long block_size = get_block_size(fs);
+	return (struct ext2_group_desc*)ROUND_UP((char*)get_super_block(fs) + SUPERBLOCK_SIZE, block_size);
 }
 
 
