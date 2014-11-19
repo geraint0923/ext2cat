@@ -75,7 +75,7 @@ char ** split_path(char * path) {
     }
 
     // Copy out each piece by advancing two pointers (piece_start and slash).
-    char ** parts = (char **) calloc(num_slashes, sizeof(char *));
+    char ** parts = (char **) calloc(num_slashes + 1, sizeof(char *));
     char * piece_start = path + 1;
     int i = 0;
     for (char * slash = strchr(path + 1, '/');
@@ -93,6 +93,17 @@ char ** split_path(char * path) {
     return parts;
 }
 
+/*
+ * clean all the allocated memory in split_path
+ */
+void cleanup_path(char **res) {
+	int i = 0;
+	while(res[i]) {
+		free(res[i++]);
+	}
+	free(res);
+}
+
 
 // Convenience function to get the inode of the root directory.
 struct ext2_inode * get_root_dir(void * fs) {
@@ -106,19 +117,21 @@ struct ext2_inode * get_root_dir(void * fs) {
 // name should be a single component: "foo.txt", not "/files/foo.txt".
 __u32 get_inode_from_dir(void * fs, struct ext2_inode * dir, 
         char * name) {
-//	printf("name => %s\n", name);
 	struct ext2_dir_entry_2 *ent = NULL;
 	char *cur_ptr, *end;
 	int i;
 	for(i = 0; i < EXT2_NDIR_BLOCKS; i++) {
 		cur_ptr = (char*)get_block(fs, dir->i_block[i]);
 		end = cur_ptr + get_block_size(fs);
+		/*
+		 * if point to the end of the block, then end
+		 */
 		while(cur_ptr != end) {
 			ent = (struct ext2_dir_entry_2*)cur_ptr;
-//			printf("name = %s %p %p\n", ent->name, cur_ptr, end);
-			if(!strncmp(name, ent->name, ent->name_len)) {
+			if(strlen(name) == ent->name_len && !strncmp(name, ent->name, ent->name_len)) {
 				return ent->inode;
 			}
+			// break if the rec_len is invalid
 			if(!ent->rec_len)
 				break;
 			cur_ptr += ent->rec_len;
@@ -131,7 +144,28 @@ __u32 get_inode_from_dir(void * fs, struct ext2_inode * dir,
 // Find the inode number for a file by its full path.
 // This is the functionality that ext2cat ultimately needs.
 __u32 get_inode_by_path(void * fs, char * path) {
-    // FIXME: Uses reference implementation.
-    return _ref_get_inode_by_path(fs, path);
+	struct ext2_inode *dir_inode = get_root_dir(fs);
+	__u32 inode_idx = 0;
+	/*
+	 * since res is malloc by libc, it should be freed after being used
+	 */
+	char **res = split_path(path);
+	int i = 0;
+	while(res[i]) {
+		inode_idx = get_inode_from_dir(fs, dir_inode, res[i]);
+		/*
+		 * if the inode is invalid, then break
+		 */
+		if(!inode_idx) {
+			break;
+		}
+		dir_inode = get_inode(fs, inode_idx);
+		i++;
+	}
+	/*
+	 * free the calloc'ed memory, do the cleanup
+	 */
+	cleanup_path(res);
+	return inode_idx;
 }
 
