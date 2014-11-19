@@ -17,16 +17,12 @@
 
 // Return a pointer to the primary superblock of a filesystem.
 struct ext2_super_block * get_super_block(void * fs) {
-    // FIXME: Uses reference implementation.
-    //return _ref_get_super_block(fs)
-	return fs + SUPERBLOCK_OFFSET;
+	return (struct ext2_super_block*)((char*)fs + SUPERBLOCK_OFFSET);
 }
 
 
 // Return the block size for a filesystem.
 __u32 get_block_size(void * fs) {
-    // FIXME: Uses reference implementation.
-    //return _ref_get_block_size(fs);
     return EXT2_BLOCK_SIZE(get_super_block(fs));
 }
 
@@ -34,8 +30,6 @@ __u32 get_block_size(void * fs) {
 // Return a pointer to a block given its number.
 // get_block(fs, 0) == fs;
 void * get_block(void * fs, __u32 block_num) {
-    // FIXME: Uses reference implementation.
-    //return _ref_get_block(fs, block_num);
     return (void*)((char*)fs + block_num * get_block_size(fs));
 }
 
@@ -46,8 +40,9 @@ void * get_block(void * fs, __u32 block_num) {
 // ext2 filesystems will have several of these, but, for simplicity, we will
 // assume there is only one.
 struct ext2_group_desc * get_block_group(void * fs, __u32 block_group_num) {
-    // FIXME: Uses reference implementation.
-    //return _ref_get_block_group(fs, block_group_num);
+	/*
+	 * the descriptor table is right after the block that the superblock lives in
+	 */
 	unsigned long block_size = get_block_size(fs);
 	return (struct ext2_group_desc*)ROUND_UP((char*)get_super_block(fs) + SUPERBLOCK_SIZE, block_size);
 }
@@ -57,8 +52,10 @@ struct ext2_group_desc * get_block_group(void * fs, __u32 block_group_num) {
 // would require finding the correct block group, but you may assume it's in the
 // first one.
 struct ext2_inode * get_inode(void * fs, __u32 inode_num) {
-    // FIXME: Uses reference implementation.
-    return _ref_get_inode(fs, inode_num);
+	/*
+	 * inode index begin with 1, so real index is (inode_num - 1)
+	 */
+    return (struct ext2_inode*)((char*)get_block(fs, (get_block_group(fs, 1)->bg_inode_table)) + (inode_num - 1) * EXT2_INODE_SIZE(get_super_block(fs)));
 }
 
 
