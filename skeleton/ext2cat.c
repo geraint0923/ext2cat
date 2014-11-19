@@ -41,6 +41,28 @@ int main(int argc, char ** argv) {
         bytes_read += bytes_to_read;
     }
 
+	/*
+	 * if not all the data has been retrieved
+	 * then begin to read the indirect block
+	 */
+	if(bytes_read < size) {
+		/*
+		 * to retrieve the data the indirect data block
+		 * get the indirect block array
+		 */
+		__u32 *ind_block = (__u32*)get_block(fs, target_ino->i_block[EXT2_IND_BLOCK]);
+		int ind_count = get_block_size(fs) / sizeof(__u32);
+		for(int i = 0; i < ind_count; i++) {
+			bytes_left = size - bytes_read;
+			__u32 bytes_to_read = bytes_left > block_size ? block_size : bytes_left;
+	        void * block = get_block(fs, ind_block[i]);
+	        memcpy(buf + bytes_read, block, bytes_to_read);
+	        bytes_read += bytes_to_read;
+			if(!bytes_left)
+				break;
+		}
+	}
+
     write(1, buf, bytes_read);
     if (bytes_read < size) {
         printf("%s: file uses indirect blocks. output was truncated!\n",
