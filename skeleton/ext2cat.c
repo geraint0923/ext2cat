@@ -55,20 +55,27 @@ int main(int argc, char ** argv) {
 		for(int i = 0; i < ind_count; i++) {
 			bytes_left = size - bytes_read;
 			__u32 bytes_to_read = bytes_left > block_size ? block_size : bytes_left;
-	        void * block = get_block(fs, ind_block[i]);
-	        memcpy(buf + bytes_read, block, bytes_to_read);
-	        bytes_read += bytes_to_read;
+			void * block = get_block(fs, ind_block[i]);
+			/*
+			 * copy the data from data block to target address
+			 */
+			memcpy(buf + bytes_read, block, bytes_to_read);
+			bytes_read += bytes_to_read;
+			/*
+			 * if all the data has been read,
+			 * then break the loop
+			 */
 			if(!bytes_left)
 				break;
 		}
 	}
 
-    write(1, buf, bytes_read);
-    if (bytes_read < size) {
-        printf("%s: file uses indirect blocks. output was truncated!\n",
-               argv[0]);
-    }
+	write(1, buf, bytes_read);
+	if (bytes_read < size) {
+		printf("%s: file uses indirect blocks. output was truncated!\n",
+				argv[0]);
+	}
 
-    return 0;
+	return 0;
 }
 
