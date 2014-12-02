@@ -1,0 +1,51 @@
+In this project, I have finished both:
+
+(1) BASIC part
+(2) EXTRA part
+
+The following is the details for each part:
+
+(1) BASIC part
+Implemented all the basic functions to retrieve data from the target ext2 image.
+
+a. get_super_block 
+To get a superblock from the memory mapped file system, just add a predefined
+superblock offset to the start address of mapped file system.
+
+b. get_block_size
+To get the block size of from superblock is just to use a predefined macro and to
+use the function I just implemented.
+
+c. get_block
+According to the ext2 documentation, the mapped start address is the 0th block, so
+to get a block address is to add an offset of the specified block to the mapped file
+system start address.
+
+d. get_block_group
+Since the descriptor table is right after the block that the superblock lives in, so
+round up the end address of the superblock to get the descriptor table. While the project
+assumes that there is only one block group, then the descriptor table address is also
+the first block group address.
+
+e. get_inode
+First get the inode table from block descriptor, then retrieve the inode using the specified
+index. Note that the index of inode begins from 1, so the real index of the inode need to be
+deducted by 1.
+
+f. get_inode_from_dir
+Traverse all the data blocks of the specified inode to find the file specified by name. Each
+file in a directory is organized as a linked list in each data block. Use the rec_len in 
+ext2_dir_entry_2 structure to get hte next directory entry.
+
+g. get_inode_by_path
+First split the path with the pre-implemented function, then call get_inode_from_dir (which is
+implemented in the previous task) to dig into the directory until the target file is found.
+
+(2) EXTRA part
+
+To get the extra point, I modified the main function to make it able to read the data from
+the indirect data block.
+
+First use defined variable EXT2_IND_BLOCK to get the index of the indirect block in inode. Then
+traverse all the data block listed in indirect block table until all the data of the target
+file has been read to tthe target buffer.
