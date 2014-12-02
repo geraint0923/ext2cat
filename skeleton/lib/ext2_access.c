@@ -17,12 +17,20 @@
 
 // Return a pointer to the primary superblock of a filesystem.
 struct ext2_super_block * get_super_block(void * fs) {
+	/*
+	 * add the superblock offset to the fs start address
+	 * to get the address of superblock
+	 */
 	return (struct ext2_super_block*)((char*)fs + SUPERBLOCK_OFFSET);
 }
 
 
 // Return the block size for a filesystem.
 __u32 get_block_size(void * fs) {
+	/*
+	 * use the predefine macro in ext2fs.h to get 
+	 * block size from the superblock
+	 */
     return EXT2_BLOCK_SIZE(get_super_block(fs));
 }
 
@@ -33,6 +41,9 @@ void * get_block(void * fs, __u32 block_num) {
     return (void*)((char*)fs + block_num * get_block_size(fs));
 }
 
+/*
+ * define a macro helper to get a rounded up address easily
+ */
 #define ROUND_UP(x, size) \
 	((void*)((unsigned long)((char*)(x)+size-1) & ~((size)-1)))
 
@@ -44,6 +55,9 @@ struct ext2_group_desc * get_block_group(void * fs, __u32 block_group_num) {
 	 * the descriptor table is right after the block that the superblock lives in
 	 */
 	unsigned long block_size = get_block_size(fs);
+	/*
+	 * use round up macro to get the next block right after the superblock
+	 */
 	return (struct ext2_group_desc*)ROUND_UP((char*)get_super_block(fs) + SUPERBLOCK_SIZE, block_size);
 }
 
